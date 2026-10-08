@@ -1,0 +1,7 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
+
+export const metadata: Metadata = { title: "Reset your password", robots: { index: false, follow: false } };
+type Props = { searchParams: Promise<{ sent?: string }> };
+export default async function ForgotPasswordPage({ searchParams }: Props) { const { sent } = await searchParams; return <><SiteHeader /><main className="auth-page"><section className="auth-art"><span className="eyebrow">Account recovery</span><h1>Let’s get you back in.</h1><p>For security, we never reveal whether an email address is attached to an account.</p></section><section className="auth-form-wrap"><form className="auth-form" action="/api/auth/forgot" method="post"><h2>Reset your password</h2>{sent ? <p className="form-message form-success">If an account exists and email delivery is configured, a one-hour reset link has been sent.</p> : <p>Enter your account email and we’ll send a secure, expiring link.</p>}<div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" required autoComplete="email" /></div><button className="button button-dark button-full" type="submit">Send reset link</button><p className="auth-switch"><Link className="text-link" href="/login">Back to login</Link></p></form></section></main></>; }

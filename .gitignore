@@ -1,0 +1,29 @@
+# Dependencies and Next.js build output
+node_modules/
+.next/
+out/
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Bundled local runtimes and database data
+.runtime/
+
+# Logs and local caches
+*.log
+.eslintcache
+*.tsbuildinfo
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local upload storage
+uploads/
+
+# PowerShell host cache created in this workspace
+Microsoft/

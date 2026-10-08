@@ -1,0 +1,4 @@
+import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+export default function NotFound() { return <><SiteHeader /><main className="content-page"><div className="narrow" style={{ textAlign: "center" }}><span className="eyebrow">404</span><h1>This one’s out of frame.</h1><p>We couldn’t find that page or the creator profile is not currently approved for public viewing.</p><div className="hero-buttons" style={{ justifyContent: "center" }}><Link className="button button-dark" href="/creators">Find creators</Link><Link className="button button-pink" href="/">Go home</Link></div></div></main><SiteFooter /></>; }

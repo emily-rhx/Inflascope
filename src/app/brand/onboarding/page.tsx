@@ -1,0 +1,15 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { brandProfiles } from "@/db/schema";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { requireUser } from "@/lib/auth";
+import { addCalendarMonth, formatDate } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Brand account setup", robots: { index: false, follow: false } };
+export default async function BrandOnboardingPage() {
+  const user = await requireUser("brand"); const [brand] = await db.select().from(brandProfiles).where(eq(brandProfiles.userId, user.id)).limit(1); if (!brand) return null; const trialEnd = addCalendarMonth(new Date());
+  return <DashboardShell user={user} title="Set up your brand account"><div className="onboarding"><div className="progress"><span className="active">1 · Account</span><span className="active">2 · Business</span><span>3 · Review membership</span><span>4 · Stripe checkout</span></div><section className="form-section"><span className="eyebrow">Before billing</span><h2>Tell us about your business</h2><p>Saving these details does not begin a trial or charge. Checkout is a separate step from your dashboard.</p><form action="/api/brand/profile" method="post"><div className="form-grid"><div className="field"><label htmlFor="businessName">Business name</label><input id="businessName" name="businessName" defaultValue={brand.businessName} required /></div><div className="field"><label htmlFor="contactName">Contact name</label><input id="contactName" name="contactName" defaultValue={brand.contactName || user.displayName} required /></div><div className="field"><label htmlFor="websiteUrl">Website (optional)</label><input id="websiteUrl" name="websiteUrl" type="url" defaultValue={brand.websiteUrl || ""} placeholder="https://…" /></div><div className="field"><label htmlFor="country">Country</label><input id="country" name="country" defaultValue={brand.country || ""} /></div></div><button className="button button-dark" type="submit">Save and continue to dashboard</button></form></section><section className="form-section"><h2>Membership review</h2><div className="price">£8.99 <small>/ month after trial</small></div><p><strong>If an eligible one-calendar-month trial began today, full access would continue until {formatDate(trialEnd)}.</strong> Stripe collects a payment method and shows the exact date before confirmation. Unless cancelled, £8.99 monthly billing begins after the trial. Cancellation stops renewal and access continues to the current period end.</p><p>No creator fees, gifts, bookings or collaboration payments are included. Those arrangements are agreed directly with creators.</p><Link className="text-link" href="/pricing">Read full pricing details</Link></section></div></DashboardShell>;
+}
