@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = { title: "Create your creator profile", robots: { index: false, follow: false } };
 
@@ -86,5 +87,6 @@ export default async function CreatorSignupPage({ searchParams }: Props) {
         </form>
       </section>
     </main>
+    <SiteFooter />
   </>;
 }
