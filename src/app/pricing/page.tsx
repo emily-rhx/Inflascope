@@ -2,15 +2,35 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { addCalendarMonth, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Pricing", description: "One clear inflascope brand membership: one calendar month free for eligible first-time brands, then £8.99 per month." };
+export const metadata: Metadata = { title: "Pricing", description: "Compare Inflascope Standard and Advanced brand memberships, including the limited founding prices." };
+
+const plans = [
+  { name: "Founding Standard", price: "£10.99", note: "First 50 Standard brands", advanced: false, founding: true },
+  { name: "Standard", price: "£12.99", note: "Standard ongoing price", advanced: false, founding: false },
+  { name: "Founding Advanced", price: "£14.99", note: "First 50 Advanced brands", advanced: true, founding: true },
+  { name: "Advanced", price: "£17.99", note: "Advanced ongoing price", advanced: true, founding: false },
+];
 
 export default function PricingPage() {
-  const exampleTrialEnd = addCalendarMonth(new Date());
   const checkoutConfigured = Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID && process.env.STRIPE_WEBHOOK_SECRET);
-  return <><SiteHeader /><main><section className="page-hero"><div className="container"><span className="eyebrow">Simple pricing</span><h1>One membership. No mystery.</h1><p>Creator accounts are always free. Eligible first-time brand accounts get full member access for one calendar month, followed by £8.99 monthly billing.</p></div></section>
-  <section className="section section-white"><div className="container"><div className="pricing-card"><span className="tag badge-gifting">Eligible new brands: one calendar month free</span><h2 style={{ fontSize: "2rem", marginTop: 18 }}>Brand directory membership</h2><div className="price">£8.99 <small>/ month after trial</small></div><ul className="check-list"><li>All advanced creator search filters</li><li>Detailed creator-supplied engagement and audience figures</li><li>Evidence-review and account-ownership check labels</li><li>Collaboration formats and indicative starting prices</li><li>Creator-approved business contacts and social links</li><li>Your own saved creator shortlist</li></ul><Link className="button button-dark button-full" href="/signup/brand">Create a brand account</Link><p className="disclosure"><strong>If an eligible trial started today, it would end on {formatDate(exampleTrialEnd)}.</strong> Your checkout page will show the exact date before you provide payment details. Unless cancelled, billing then starts at £8.99 each month. Cancellation stops future renewal; access continues until the displayed trial or paid period ends.</p>{!checkoutConfigured && <p className="form-message form-error"><strong>Demo billing notice:</strong> Stripe checkout is currently disabled because server-side test credentials are not configured. No live or simulated payment will be accepted.</p>}</div></div></section>
-  <section className="section"><div className="narrow"><div className="section-heading"><span className="eyebrow">Good to know</span><h2>Clear terms before checkout.</h2></div><div className="prose"><h3>Who is eligible for the trial?</h3><p>The one-calendar-month trial is for a brand account that has not previously used an inflascope brand trial. Eligibility is checked on the server before checkout.</p><h3>Do I need to add a payment method?</h3><p>Yes. Stripe’s hosted checkout collects it securely. inflascope does not receive or store full card details. The future £8.99 monthly charge and trial end date are shown before you subscribe.</p><h3>What happens if I cancel?</h3><p>Future renewal stops. Member access remains available until the end of your current free trial or paid billing period; then gated details lock. Your shortlist remains saved to your account.</p><h3>Does membership include collaboration costs?</h3><p>No. Membership provides directory access only. Gifts, creator fees and all collaboration terms are discussed and settled directly between brand and creator.</p></div></div></section></main><SiteFooter /></>;
+  return <><SiteHeader /><main>
+    <section className="page-hero"><div className="container"><span className="eyebrow">Clear monthly pricing</span><h1>Choose the workspace your brand needs.</h1><p>Creator accounts are always free. Standard is designed for creator discovery; Advanced adds the tools for managing ongoing campaigns and relationships.</p></div></section>
+    <section className="section section-white"><div className="container">
+      <div className="membership-price-grid">
+        {plans.map((plan) => <article className={`pricing-card pricing-card-compact ${plan.advanced ? "pricing-card-advanced" : ""}`} key={plan.name}>
+          {plan.founding && <span className="tag badge-gifting">Limited founding tier</span>}
+          <h2>{plan.name}</h2>
+          <div className="price">{plan.price} <small>/ month</small></div>
+          <p>{plan.note}</p>
+          <ul className="check-list">{plan.advanced ? <><li>Everything in Standard</li><li>Creator Match Requests and alerts</li><li>Campaign workspace</li><li>Saved searches, CRM notes and templates</li></> : <><li>Creator search and filters</li><li>Full approved creator profiles</li><li>Creator-approved contact details</li><li>Private creator shortlist</li></>}</ul>
+          <Link className="button button-dark button-full" href="/signup/brand">Create a brand account</Link>
+        </article>)}
+      </div>
+      <p className="founding-price-note"><strong>Founding price locked for as long as your membership remains active.</strong> Limited to the first 50 brands in each founding tier.</p>
+      {!checkoutConfigured && <p className="form-message form-error"><strong>Billing setup notice:</strong> Stripe checkout remains disabled until the matching production price IDs and webhook credentials are configured. No payment will be accepted in the meantime.</p>}
+    </div></section>
+    <section className="section"><div className="narrow"><div className="section-heading"><span className="eyebrow">Good to know</span><h2>Creator fees stay separate.</h2></div><div className="prose"><p>Membership provides access to Inflascope’s discovery and workspace tools. Gifts, creator fees, usage rights and every collaboration term are agreed directly between the brand and creator.</p><h3>What happens if I cancel?</h3><p>Future renewal stops and access continues until the end of the current paid period. Your saved workspace information remains attached to your account.</p></div></div></section>
+  </main><SiteFooter /></>;
 }

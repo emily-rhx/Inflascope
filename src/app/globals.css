@@ -157,6 +157,11 @@ p { color: var(--muted); }
 .step::before { counter-increment: step; content: "0" counter(step); position: absolute; top: 0; left: 0; color: var(--pink); font-size: 4rem; font-weight: 900; line-height: 1; }
 .step h3 { color: var(--green); }
 .pricing-card { width: min(660px, 100%); margin: 0 auto; padding: clamp(28px, 5vw, 56px); background: var(--cream-light); border: 2px solid var(--green); border-radius: 30px; box-shadow: 12px 12px 0 var(--pink); }
+.membership-price-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+.pricing-card-compact { width: 100%; margin: 0; padding: clamp(26px, 4vw, 42px); }
+.pricing-card-compact h2 { margin: 18px 0 8px; color: var(--green); font-size: clamp(1.8rem, 3vw, 2.5rem); }
+.pricing-card-advanced { background: #f8e3eb; }
+.founding-price-note { max-width: 820px; margin: 38px auto 0; padding: 18px 22px; border-radius: 16px; background: var(--green); color: white; text-align: center; }
 .price { color: var(--green); font-size: clamp(3.5rem, 8vw, 6rem); font-weight: 900; line-height: 1; letter-spacing: -.07em; }
 .price small { font-size: 1rem; letter-spacing: 0; }
 .check-list { padding: 0; margin: 28px 0; list-style: none; }
@@ -380,6 +385,7 @@ th { color: var(--muted); font-size: .7rem; letter-spacing: .06em; text-transfor
   .auth-art { min-height: 390px; padding: 60px 24px; }
   .auth-form-wrap { padding: 48px 24px; }
   .form-grid { grid-template-columns: 1fr; }
+  .membership-price-grid { grid-template-columns: 1fr; }
   .creator-signup-page { grid-template-columns: 1fr; }
   .creator-signup-intro { position: relative; top: 0; min-height: auto; padding: 58px 24px; }
   .creator-signup-form-wrap { padding: 44px 20px 60px; }

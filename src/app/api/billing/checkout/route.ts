@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       metadata: { brandId: brand.id, userId: user.id },
       ...(trialEligible ? { trial_end: Math.floor(trialEnd.getTime() / 1000), trial_settings: { end_behavior: { missing_payment_method: "cancel" } } } : {}),
     },
-    custom_text: { submit: { message: trialEligible ? `Full access is free until ${trialEnd.toLocaleDateString("en-GB")}, then £8.99 monthly unless cancelled.` : "You will be charged £8.99 monthly until cancelled." } },
+    custom_text: { submit: { message: trialEligible ? `Full access is free until ${trialEnd.toLocaleDateString("en-GB")}, then £12.99 monthly unless cancelled.` : "You will be charged £12.99 monthly until cancelled." } },
     success_url: `${baseUrl}/brand/dashboard?checkout=returned#billing`,
     cancel_url: `${baseUrl}/brand/dashboard?checkout=cancelled#billing`,
     allow_promotion_codes: false,
