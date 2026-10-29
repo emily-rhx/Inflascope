@@ -13,6 +13,30 @@ export const signupSchema = z.object({
   terms: z.literal("on"),
 });
 
+const creatorCategory = z.enum([
+  "Beauty & skincare", "Fashion", "Food & drink", "Lifestyle", "Fitness & wellbeing", "Parenting & family",
+  "Pets", "Travel", "Home & interiors", "Technology & gaming", "Books & education", "Arts & crafts",
+  "Finance & business", "Sustainability", "Automotive", "Entertainment & culture",
+]);
+
+export const creatorSignupDetailsSchema = z.object({
+  phone: z.string().trim().min(7, "Enter a valid phone number").max(30),
+  phonePrivate: z.boolean(),
+  preferredContact: z.enum(["email", "phone", "social"]),
+  socialPlatform: z.string().trim().max(40),
+  socialHandle: z.string().trim().max(80),
+  location: z.string().trim().min(2, "Enter your location").max(80),
+  platform: z.enum(["Instagram", "TikTok", "YouTube", "Blog"]),
+  followers: z.coerce.number().int().min(0).max(100_000_000),
+  bio: z.string().trim().min(20, "Tell brands a little more about your content").max(180),
+  contentCategories: z.array(creatorCategory).min(1, "Choose at least one content category"),
+  collabs: z.array(z.enum(["Gifting", "Paid projects", "Organic social UGC"])).min(1, "Choose at least one collaboration preference"),
+  marketingConsent: z.boolean(),
+}).superRefine((value, context) => {
+  if (value.preferredContact === "social" && (!value.socialPlatform || !value.socialHandle)) context.addIssue({ code: "custom", message: "Add the social platform and username brands should use" });
+  if (value.preferredContact === "phone" && value.phonePrivate) context.addIssue({ code: "custom", message: "Make your phone visible or choose email or social media contact" });
+});
+
 export const loginSchema = z.object({ email, password: z.string().min(1).max(72) });
 export const forgotPasswordSchema = z.object({ email });
 export const resetPasswordSchema = z.object({ token: z.string().min(32).max(200), password });

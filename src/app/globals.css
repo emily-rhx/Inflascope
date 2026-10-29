@@ -254,6 +254,34 @@ p { color: var(--muted); }
 .field { margin: 16px 0; }
 .field-help { margin-top: 5px; color: var(--muted); font-size: .74rem; }
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 18px; }
+.creator-signup-page { min-height: calc(100vh - 78px); display: grid; grid-template-columns: minmax(320px, .78fr) minmax(600px, 1.22fr); align-items: start; background: var(--cream); }
+.creator-signup-intro { position: sticky; top: 78px; min-height: calc(100vh - 78px); overflow: hidden; padding: clamp(56px, 7vw, 96px) clamp(28px, 6vw, 82px); display: flex; flex-direction: column; justify-content: center; background: var(--green); color: var(--cream); }
+.creator-signup-intro::after { content: ""; position: absolute; width: 300px; height: 300px; right: -160px; bottom: -130px; border: 54px solid var(--pink); border-radius: 50%; opacity: .9; }
+.creator-signup-intro h1 { max-width: 660px; margin: 12px 0 22px; font-size: clamp(3.2rem, 6vw, 6rem); line-height: .9; }
+.creator-signup-intro > p { max-width: 560px; color: #f5efe3d9; font-size: 1.05rem; line-height: 1.7; }
+.signup-intro-card { position: relative; z-index: 1; max-width: 560px; margin: 28px 0 18px; padding: 22px; border: 1px solid #f7f0e25c; border-radius: 18px; background: #ffffff12; }
+.signup-intro-card strong { display: block; margin-bottom: 6px; font-family: var(--font-display), Georgia, serif; font-size: 1.35rem; }
+.signup-intro-card p { margin: 0; color: #f5efe3c9; }
+.creator-signup-intro .check-list { position: relative; z-index: 1; }
+.creator-signup-form-wrap { padding: clamp(42px, 6vw, 82px) clamp(24px, 6vw, 86px); }
+.creator-signup-form { width: min(850px, 100%); margin: 0 auto; }
+.signup-form-heading { margin-bottom: 30px; }
+.signup-form-heading h2 { margin: 8px 0 10px; color: var(--green); font-size: clamp(2.5rem, 5vw, 4.2rem); }
+.signup-form-heading p { max-width: 660px; color: var(--muted); }
+.creator-signup-grid { gap: 4px 20px; }
+.signup-span-two { grid-column: 1 / -1; }
+.option-fieldset { margin: 18px 0; padding: 0; border: 0; }
+.option-fieldset legend { margin-bottom: 5px; color: var(--green); font-family: var(--font-display), Georgia, serif; font-size: 1.42rem; font-weight: 800; }
+.category-option-grid { margin-top: 14px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.category-option-grid label, .choice-row label { position: relative; cursor: pointer; }
+.category-option-grid input, .choice-row input { position: absolute; opacity: 0; pointer-events: none; }
+.category-option-grid span, .choice-row span { min-height: 44px; padding: 10px 11px; display: flex; align-items: center; justify-content: center; border: 1px solid #bdb7ac; border-radius: 12px; background: white; color: var(--ink); font-size: .78rem; font-weight: 750; text-align: center; transition: .16s ease; }
+.category-option-grid input:checked + span, .choice-row input:checked + span { border-color: var(--green); background: var(--green); color: white; box-shadow: 0 0 0 2px #155c4822; }
+.category-option-grid input:focus-visible + span, .choice-row input:focus-visible + span { outline: 3px solid var(--pink); outline-offset: 2px; }
+.choice-row { margin-top: 14px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.privacy-choice { margin: 8px 0 18px; padding: 14px; border: 1px solid #e2b6c8; border-radius: 14px; background: #efb5cc26; }
+.privacy-choice strong { display: block; color: var(--green); }
+.creator-signup-submit { margin-top: 18px; min-height: 52px; }
 .form-message { padding: 12px 14px; margin: 14px 0; border-radius: 10px; font-size: .85rem; }
 .form-error { color: var(--danger); background: #f7dadd; }
 .form-success { color: var(--success); background: #dcecdf; }
@@ -350,6 +378,12 @@ th { color: var(--muted); font-size: .7rem; letter-spacing: .06em; text-transfor
   .auth-art { min-height: 390px; padding: 60px 24px; }
   .auth-form-wrap { padding: 48px 24px; }
   .form-grid { grid-template-columns: 1fr; }
+  .creator-signup-page { grid-template-columns: 1fr; }
+  .creator-signup-intro { position: relative; top: 0; min-height: auto; padding: 58px 24px; }
+  .creator-signup-form-wrap { padding: 44px 20px 60px; }
+  .signup-span-two { grid-column: auto; }
+  .category-option-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .choice-row { grid-template-columns: 1fr; }
   .dashboard-layout { display: block; }
   .dashboard-sidebar { position: static; width: 100%; height: auto; padding: 20px; }
   .dashboard-sidebar nav { display: flex; overflow-x: auto; }
