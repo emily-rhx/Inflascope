@@ -57,6 +57,8 @@ p { color: var(--muted); }
 .logo-lens { position: relative; display: inline-grid; place-items: center; width: .8em; height: .8em; margin: 0 .03em; border: .12em solid currentColor; border-radius: 50%; color: transparent; }
 .logo-lens::after { content: ""; position: absolute; width: .26em; height: .12em; right: -.19em; bottom: -.08em; background: currentColor; color: inherit; transform: rotate(42deg); border-radius: 2px; }
 .wordmark .logo-lens::after { background: var(--coral); }
+.wordmark-image { width: clamp(150px, 16vw, 214px); height: 58px; display: flex; align-items: center; overflow: hidden; }
+.wordmark-image img { width: 100%; height: auto; display: block; }
 
 .site-header { position: relative; z-index: 50; background: var(--cream); border-bottom: 1px solid rgba(23, 86, 64, .16); }
 .header-inner { width: min(1240px, calc(100% - 32px)); min-height: 78px; margin-inline: auto; display: flex; align-items: center; justify-content: space-between; gap: 26px; }
