@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { get, put } from "@vercel/blob";
 
 const acceptedTypes = new Map([
   ["image/jpeg", "jpg"],
@@ -9,7 +10,8 @@ const acceptedTypes = new Map([
   ["image/webp", "webp"],
 ]);
 
-export function storageMode(): "s3" | "local" | null {
+export function storageMode(): "vercel" | "s3" | "local" | null {
+  if (process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN) return "vercel";
   if (process.env.OBJECT_STORAGE_ENDPOINT && process.env.OBJECT_STORAGE_BUCKET && process.env.OBJECT_STORAGE_ACCESS_KEY_ID && process.env.OBJECT_STORAGE_SECRET_ACCESS_KEY && process.env.OBJECT_STORAGE_PUBLIC_BASE_URL) return "s3";
   if (process.env.ALLOW_LOCAL_UPLOADS === "true") return "local";
   return null;
@@ -33,12 +35,25 @@ function client() {
 
 export async function storeImage(file: File, visibility: "public" | "private") {
   const extension = acceptedTypes.get(file.type);
-  if (!extension || file.size < 100 || file.size > 8 * 1024 * 1024) throw new Error("invalid_file");
+  if (!extension || file.size < 100 || file.size > 4 * 1024 * 1024) throw new Error("invalid_file");
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!validMagic(bytes, file.type)) throw new Error("invalid_file");
   const key = `${visibility}/${new Date().getUTCFullYear()}/${randomUUID()}.${extension}`;
   const mode = storageMode();
   if (!mode) throw new Error("storage_unavailable");
+  if (mode === "vercel") {
+    await put(key, file, {
+      access: "private",
+      contentType: file.type,
+      addRandomSuffix: false,
+      cacheControlMaxAge: visibility === "public" ? 31_536_000 : 60,
+    });
+    return {
+      key,
+      publicUrl: visibility === "public" ? `/api/media?key=${encodeURIComponent(key)}` : null,
+      contentType: file.type,
+    };
+  }
   if (mode === "s3") {
     await client().send(new PutObjectCommand({ Bucket: process.env.OBJECT_STORAGE_BUCKET!, Key: key, Body: bytes, ContentType: file.type, CacheControl: visibility === "public" ? "public, max-age=31536000, immutable" : "no-store", ACL: visibility === "public" ? "public-read" : "private" }));
     return { key, publicUrl: visibility === "public" ? `${process.env.OBJECT_STORAGE_PUBLIC_BASE_URL!.replace(/\/$/, "")}/${key}` : null, contentType: file.type };
@@ -53,6 +68,11 @@ export async function storeImage(file: File, visibility: "public" | "private") {
 export async function readPrivateImage(key: string) {
   if (!key.startsWith("private/")) throw new Error("invalid_key");
   const mode = storageMode();
+  if (mode === "vercel") {
+    const result = await get(key, { access: "private" });
+    if (!result || result.statusCode !== 200 || !result.stream) throw new Error("not_found");
+    return { bytes: result.stream, contentType: result.blob.contentType || "application/octet-stream" };
+  }
   if (mode === "s3") {
     const result = await client().send(new GetObjectCommand({ Bucket: process.env.OBJECT_STORAGE_BUCKET!, Key: key }));
     if (!result.Body) throw new Error("not_found");
@@ -65,4 +85,15 @@ export async function readPrivateImage(key: string) {
     return { bytes, contentType: extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg" };
   }
   throw new Error("storage_unavailable");
+}
+
+export async function readPublicImage(key: string) {
+  if (!key.startsWith("public/")) throw new Error("invalid_key");
+  const mode = storageMode();
+  if (mode === "vercel") {
+    const result = await get(key, { access: "private" });
+    if (!result || result.statusCode !== 200 || !result.stream) throw new Error("not_found");
+    return { bytes: result.stream, contentType: result.blob.contentType || "application/octet-stream" };
+  }
+  throw new Error("not_found");
 }
