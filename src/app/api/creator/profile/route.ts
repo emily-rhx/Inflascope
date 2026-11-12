@@ -1,10 +1,12 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { collaborationPreferences, creatorContacts, creatorNiches, creatorProfiles, niches, socialAccounts, users } from "@/db/schema";
+import { collaborationPreferences, creatorContacts, creatorNiches, creatorProfiles, engagementMetrics, niches, socialAccounts, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { formString, isSameOrigin } from "@/lib/security";
 import { firstZodError, creatorProfileSchema } from "@/lib/validation";
+import { DEFAULT_NICHES } from "@/lib/niches";
+import { storeImage } from "@/lib/storage";
 
 function optionalNumber(value: string) { return value.trim() === "" ? undefined : Number(value); }
 function clean(value: string, max: number) { return value.trim().slice(0, max); }
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
   const rawPrice = optionalNumber(formString(form, "minimumStartingPrice"));
   const input = {
     displayName: clean(formString(form, "displayName"), 80), photoUrl: clean(formString(form, "photoUrl"), 500), city: clean(formString(form, "city"), 80), region: clean(formString(form, "region"), 80), country: clean(formString(form, "country"), 80),
-    shortIntro: clean(formString(form, "shortIntro"), 220), biography: clean(formString(form, "biography"), 2500), contentStyle: clean(formString(form, "contentStyle"), 800), brandInterests: clean(formString(form, "brandInterests"), 800), excludedSectors: clean(formString(form, "excludedSectors"), 500), languages: clean(formString(form, "languages"), 200), mainAudienceCountry: clean(formString(form, "mainAudienceCountry"), 80), audienceSummary: clean(formString(form, "audienceSummary"), 500),
+    shortIntro: clean(formString(form, "shortIntro"), 220), biography: clean(formString(form, "biography"), 2500), contentStyle: clean(formString(form, "contentStyle"), 800), brandInterests: clean(formString(form, "brandInterests"), 800), excludedSectors: clean(formString(form, "excludedSectors"), 500), languages: profile.languages || "", mainAudienceCountry: profile.mainAudienceCountry || "", audienceSummary: profile.audienceSummary || "",
     instagramHandle: clean(formString(form, "instagramHandle").replace(/^@/, ""), 80), instagramFollowers: optionalNumber(formString(form, "instagramFollowers")), tiktokHandle: clean(formString(form, "tiktokHandle").replace(/^@/, ""), 80), tiktokFollowers: optionalNumber(formString(form, "tiktokFollowers")),
     considersGifting: form.has("considersGifting"), considersPaid: form.has("considersPaid"), availability: form.has("availability"), formats: formatValues,
     minimumStartingPrice: rawPrice === undefined ? undefined : Math.round(rawPrice * 100), typicalTurnaround: clean(formString(form, "typicalTurnaround"), 100),
@@ -51,6 +53,16 @@ export async function POST(request: Request) {
     if (!parsed.data.considersGifting && !parsed.data.considersPaid) return NextResponse.redirect(new URL("/creator/onboarding?error=Choose%20at%20least%20one%20collaboration%20preference", request.url), 303);
   } else if (input.displayName.length < 2) {
     return NextResponse.redirect(new URL("/creator/onboarding?error=Add%20a%20display%20name%20before%20saving", request.url), 303);
+  }
+
+  let storedEvidence: { key: string } | null = null;
+  const evidenceFile = form.get("evidenceFile");
+  if (evidenceFile instanceof File && evidenceFile.size > 0) {
+    const platform = formString(form, "evidencePlatform");
+    const reportingPeriod = clean(formString(form, "evidencePeriod"), 100);
+    if (!["instagram", "tiktok"].includes(platform) || !reportingPeriod) return NextResponse.redirect(new URL("/creator/onboarding?error=Add%20the%20platform%20and%20reporting%20period%20for%20your%20evidence", request.url), 303);
+    try { storedEvidence = await storeImage(evidenceFile, "private"); }
+    catch { return NextResponse.redirect(new URL("/creator/onboarding?error=The%20evidence%20image%20could%20not%20be%20uploaded", request.url), 303); }
   }
 
   const profileData = { displayName: input.displayName, photoUrl: input.photoUrl || null, city: input.city || null, region: input.region || null, country: input.country || null, shortIntro: input.shortIntro || null, biography: input.biography || null, contentStyle: input.contentStyle || null, brandInterests: input.brandInterests || null, excludedSectors: input.excludedSectors || null, languages: input.languages || null, mainAudienceCountry: input.mainAudienceCountry || null, audienceSummary: input.audienceSummary || null, availability: input.availability };
@@ -76,9 +88,12 @@ export async function POST(request: Request) {
     await tx.insert(creatorContacts).values({ creatorId: profile.id, ...payload.contact }).onConflictDoUpdate({ target: creatorContacts.creatorId, set: { ...payload.contact, updatedAt: new Date() } });
     await tx.delete(creatorNiches).where(eq(creatorNiches.creatorId, profile.id));
     if (input.nicheSlugs.length) {
+      const defaults = DEFAULT_NICHES.filter((niche) => input.nicheSlugs.includes(niche.slug));
+      for (const [sortOrder, niche] of defaults.entries()) await tx.insert(niches).values({ ...niche, sortOrder }).onConflictDoUpdate({ target: niches.slug, set: { name: niche.name, active: true, sortOrder } });
       const selected = await tx.select().from(niches).where(inArray(niches.slug, input.nicheSlugs));
       if (selected.length) await tx.insert(creatorNiches).values(selected.map((niche, index) => ({ creatorId: profile.id, nicheId: niche.id, isPrimary: index === 0 })));
     }
+    if (storedEvidence) await tx.insert(engagementMetrics).values({ creatorId: profile.id, platform: formString(form, "evidencePlatform") as "instagram" | "tiktok", reportingPeriod: clean(formString(form, "evidencePeriod"), 100), measuredAt: new Date(), evidencePath: storedEvidence.key, evidenceStatus: "not_reviewed" });
   });
   return NextResponse.redirect(new URL(`/creator/dashboard?updated=${intent === "submit" ? "submitted" : "saved"}`, request.url), 303);
 }
