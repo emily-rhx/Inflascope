@@ -43,7 +43,7 @@ export const resetPasswordSchema = z.object({ token: z.string().min(32).max(200)
 
 export const creatorProfileSchema = z.object({
   displayName: z.string().trim().min(2).max(80),
-  photoUrl: z.string().trim().url().or(z.literal("")),
+  photoUrl: z.string().trim().refine((value) => value === "" || value.startsWith("/api/media?key=") || URL.canParse(value), "Add a valid profile picture"),
   city: z.string().trim().max(80),
   region: z.string().trim().max(80),
   country: z.string().trim().min(2).max(80),

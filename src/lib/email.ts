@@ -24,3 +24,24 @@ export async function sendAccountEmail({ to, token, kind }: { to: string; token:
   if (!response.ok) return { sent: false as const, reason: "provider_error" as const };
   return { sent: true as const };
 }
+
+function escapeHtml(value: string) {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+
+export async function sendProfileSubmissionEmail({ creatorName, creatorEmail }: { creatorName: string; creatorEmail: string }) {
+  if (!emailDeliveryConfigured()) return { sent: false as const, reason: "not_configured" as const };
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL!.replace(/\/$/, "");
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM,
+      to: [process.env.PROFILE_REVIEW_EMAIL || "info@inflascope.co.uk"],
+      subject: `Creator profile submitted: ${creatorName}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;color:#14201a;background:#fffdf8;border:2px solid #155c48;border-radius:24px"><h1 style="margin:0 0 22px;color:#155c48;font-family:Georgia,serif;font-size:34px">New creator profile</h1><p><strong>${escapeHtml(creatorName)}</strong> has submitted a profile for approval.</p><p>Account email: ${escapeHtml(creatorEmail)}</p><p style="margin:28px 0"><a href="${baseUrl}/admin/dashboard" style="display:inline-block;padding:13px 22px;border-radius:30px;background:#155c48;color:#fff;text-decoration:none;font-weight:700">Review the profile</a></p></div>`,
+    }),
+  });
+  if (!response.ok) return { sent: false as const, reason: "provider_error" as const };
+  return { sent: true as const };
+}

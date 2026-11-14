@@ -7,6 +7,7 @@ import { formString, isSameOrigin } from "@/lib/security";
 import { firstZodError, creatorProfileSchema } from "@/lib/validation";
 import { DEFAULT_NICHES } from "@/lib/niches";
 import { storeImage } from "@/lib/storage";
+import { sendProfileSubmissionEmail } from "@/lib/email";
 
 function optionalNumber(value: string) { return value.trim() === "" ? undefined : Number(value); }
 function clean(value: string, max: number) { return value.trim().slice(0, max); }
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
   const nicheSlugs = form.getAll("nicheSlugs").filter((item): item is string => typeof item === "string");
   const rawPrice = optionalNumber(formString(form, "minimumStartingPrice"));
   const input = {
-    displayName: clean(formString(form, "displayName"), 80), photoUrl: clean(formString(form, "photoUrl"), 500), city: clean(formString(form, "city"), 80), region: clean(formString(form, "region"), 80), country: clean(formString(form, "country"), 80),
+    displayName: clean(formString(form, "displayName"), 80), photoUrl: profile.photoUrl || "", city: clean(formString(form, "city"), 80), region: clean(formString(form, "region"), 80), country: clean(formString(form, "country"), 80),
     shortIntro: clean(formString(form, "shortIntro"), 220), biography: clean(formString(form, "biography"), 2500), contentStyle: clean(formString(form, "contentStyle"), 800), brandInterests: clean(formString(form, "brandInterests"), 800), excludedSectors: clean(formString(form, "excludedSectors"), 500), languages: profile.languages || "", mainAudienceCountry: profile.mainAudienceCountry || "", audienceSummary: profile.audienceSummary || "",
     instagramHandle: clean(formString(form, "instagramHandle").replace(/^@/, ""), 80), instagramFollowers: optionalNumber(formString(form, "instagramFollowers")), tiktokHandle: clean(formString(form, "tiktokHandle").replace(/^@/, ""), 80), tiktokFollowers: optionalNumber(formString(form, "tiktokFollowers")),
     considersGifting: form.has("considersGifting"), considersPaid: form.has("considersPaid"), availability: form.has("availability"), formats: formatValues,
@@ -53,6 +54,16 @@ export async function POST(request: Request) {
     if (!parsed.data.considersGifting && !parsed.data.considersPaid) return NextResponse.redirect(new URL("/creator/onboarding?error=Choose%20at%20least%20one%20collaboration%20preference", request.url), 303);
   } else if (input.displayName.length < 2) {
     return NextResponse.redirect(new URL("/creator/onboarding?error=Add%20a%20display%20name%20before%20saving", request.url), 303);
+  }
+
+  const profilePhotoFile = form.get("profilePhotoFile");
+  if (profilePhotoFile instanceof File && profilePhotoFile.size > 0) {
+    try {
+      const storedPhoto = await storeImage(profilePhotoFile, "public");
+      input.photoUrl = storedPhoto.publicUrl || input.photoUrl;
+    } catch {
+      return NextResponse.redirect(new URL("/creator/onboarding?error=The%20profile%20picture%20could%20not%20be%20uploaded.%20Use%20a%20JPEG,%20PNG%20or%20WebP%20under%204%20MB", request.url), 303);
+    }
   }
 
   let storedEvidence: { key: string } | null = null;
@@ -76,6 +87,7 @@ export async function POST(request: Request) {
 
   if (profile.status === "approved" || profile.status === "hidden") {
     await db.update(creatorProfiles).set({ pendingChanges: payload, lastUpdatedAt: new Date() }).where(eq(creatorProfiles.id, profile.id));
+    if (intent === "submit") await sendProfileSubmissionEmail({ creatorName: input.displayName, creatorEmail: user.email }).catch(() => undefined);
     return NextResponse.redirect(new URL(`/creator/dashboard?updated=${intent === "submit" ? "submitted-changes" : "draft-changes"}`, request.url), 303);
   }
 
@@ -95,5 +107,6 @@ export async function POST(request: Request) {
     }
     if (storedEvidence) await tx.insert(engagementMetrics).values({ creatorId: profile.id, platform: formString(form, "evidencePlatform") as "instagram" | "tiktok", reportingPeriod: clean(formString(form, "evidencePeriod"), 100), measuredAt: new Date(), evidencePath: storedEvidence.key, evidenceStatus: "not_reviewed" });
   });
+  if (intent === "submit") await sendProfileSubmissionEmail({ creatorName: input.displayName, creatorEmail: user.email }).catch(() => undefined);
   return NextResponse.redirect(new URL(`/creator/dashboard?updated=${intent === "submit" ? "submitted" : "saved"}`, request.url), 303);
 }
