@@ -26,10 +26,11 @@ export default async function CreatorSignupPage({ searchParams }: Props) {
         <p>Tell growing brands what you create, who follows you and how you would like to collaborate. Creator profiles are free.</p>
         <div className="signup-intro-card">
           <strong>Be one of our first 200 creators</strong>
-          <p>Your profile stays in draft until you verify your email and submit it for review.</p>
+          <p>Your profile stays in draft until you verify your email and submit it for review. Creators must have at least 2,000 followers on one platform.</p>
         </div>
         <ul className="check-list">
           <li>Choose every brand category that suits you</li>
+          <li>Have at least 2,000 followers on one social platform</li>
           <li>Keep your phone number private if you prefer</li>
           <li>Select gifting, paid work and organic social UGC independently</li>
         </ul>
@@ -68,7 +69,7 @@ export default async function CreatorSignupPage({ searchParams }: Props) {
             <div className="field"><label htmlFor="socialHandle">Social username <small>(optional)</small></label><input id="socialHandle" name="socialHandle" maxLength={80} placeholder="e.g. @alexcreates" /></div>
             <div className="field"><label htmlFor="location">Location</label><input id="location" name="location" required maxLength={80} placeholder="e.g. Manchester" /></div>
             <div className="field"><label htmlFor="platform">Main platform</label><select id="platform" name="platform" required defaultValue=""><option value="">Choose one</option><option>Instagram</option><option>TikTok</option><option>YouTube</option><option>Blog</option></select></div>
-            <div className="field"><label htmlFor="followers">Followers</label><input id="followers" name="followers" type="number" min={0} max={100000000} required placeholder="e.g. 4500" /></div>
+            <div className="field"><label htmlFor="followers">Followers on your main platform</label><input id="followers" name="followers" type="number" min={2000} max={100000000} required placeholder="Minimum 2,000" /><p className="field-help">You need at least 2,000 followers on this or another platform to join.</p></div>
             <div className="field signup-span-two"><label htmlFor="bio">Short introduction</label><textarea id="bio" name="bio" required minLength={20} maxLength={180} placeholder="Tell brands about your content style and audience…" /></div>
 
             <fieldset className="signup-span-two option-fieldset">

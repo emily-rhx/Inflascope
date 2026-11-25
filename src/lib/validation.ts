@@ -27,7 +27,7 @@ export const creatorSignupDetailsSchema = z.object({
   socialHandle: z.string().trim().max(80),
   location: z.string().trim().min(2, "Enter your location").max(80),
   platform: z.enum(["Instagram", "TikTok", "YouTube", "Blog"]),
-  followers: z.coerce.number().int().min(0).max(100_000_000),
+  followers: z.coerce.number().int().min(2_000, "You need at least 2,000 followers on one platform to join Inflascope").max(100_000_000),
   bio: z.string().trim().min(20, "Tell brands a little more about your content").max(180),
   contentCategories: z.array(creatorCategory).min(1, "Choose at least one content category"),
   collabs: z.array(z.enum(["Gifting", "Paid projects", "Organic social UGC"])).min(1, "Choose at least one collaboration preference"),

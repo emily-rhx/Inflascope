@@ -51,6 +51,10 @@ export async function POST(request: Request) {
     if (!user.emailVerifiedAt) return NextResponse.redirect(new URL("/creator/onboarding?error=verify", request.url), 303);
     const parsed = creatorProfileSchema.safeParse(input);
     if (!parsed.success) return NextResponse.redirect(new URL(`/creator/onboarding?error=${encodeURIComponent(firstZodError(parsed.error))}`, request.url), 303);
+    const signupFollowersRaw = profile.pendingChanges && typeof profile.pendingChanges === "object" ? (profile.pendingChanges as { followers?: unknown }).followers : undefined;
+    const signupFollowers = typeof signupFollowersRaw === "number" ? signupFollowersRaw : Number(signupFollowersRaw || 0);
+    const hasEligiblePlatform = signupFollowers >= 2_000 || Boolean(input.instagramHandle && (input.instagramFollowers || 0) >= 2_000) || Boolean(input.tiktokHandle && (input.tiktokFollowers || 0) >= 2_000);
+    if (!hasEligiblePlatform) return NextResponse.redirect(new URL("/creator/onboarding?error=You%20need%20at%20least%202%2C000%20followers%20on%20one%20platform%20to%20submit%20a%20profile", request.url), 303);
     if (!parsed.data.considersGifting && !parsed.data.considersPaid) return NextResponse.redirect(new URL("/creator/onboarding?error=Choose%20at%20least%20one%20collaboration%20preference", request.url), 303);
   } else if (input.displayName.length < 2) {
     return NextResponse.redirect(new URL("/creator/onboarding?error=Add%20a%20display%20name%20before%20saving", request.url), 303);
