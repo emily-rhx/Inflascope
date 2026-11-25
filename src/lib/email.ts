@@ -1,12 +1,18 @@
 type EmailKind = "verify" | "reset";
 
 export function emailDeliveryConfigured() {
-  return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM && process.env.NEXT_PUBLIC_APP_URL);
+  return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+}
+
+function accountBaseUrl() {
+  if (process.env.ACCOUNT_APP_URL) return process.env.ACCOUNT_APP_URL.replace(/\/$/, "");
+  if (process.env.NODE_ENV === "production") return "https://account.inflascope.co.uk";
+  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
 }
 
 export async function sendAccountEmail({ to, token, kind }: { to: string; token: string; kind: EmailKind }) {
   if (!emailDeliveryConfigured()) return { sent: false as const, reason: "not_configured" as const };
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL!.replace(/\/$/, "");
+  const baseUrl = accountBaseUrl();
   const isVerify = kind === "verify";
   const url = isVerify ? `${baseUrl}/api/auth/verify?token=${encodeURIComponent(token)}` : `${baseUrl}/reset-password?token=${encodeURIComponent(token)}`;
   const subject = isVerify ? "Verify your Inflascope email" : "Reset your Inflascope password";
@@ -31,7 +37,7 @@ function escapeHtml(value: string) {
 
 export async function sendProfileSubmissionEmail({ creatorName, creatorEmail }: { creatorName: string; creatorEmail: string }) {
   if (!emailDeliveryConfigured()) return { sent: false as const, reason: "not_configured" as const };
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL!.replace(/\/$/, "");
+  const baseUrl = accountBaseUrl();
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { brandAccountsOpen } from "@/lib/launch";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pricing", description: "Compare Inflascope Standard and Advanced brand memberships, including the limited founding prices." };
@@ -13,8 +14,9 @@ const plans = [
   { name: "Advanced", price: "£17.99", note: "Advanced ongoing price", advanced: true, founding: false },
 ];
 
-export default function PricingPage() {
+export default async function PricingPage() {
   const checkoutConfigured = Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID && process.env.STRIPE_WEBHOOK_SECRET);
+  const brandsOpen = await brandAccountsOpen();
   return <><SiteHeader /><main>
     <section className="page-hero"><div className="container"><span className="eyebrow">Clear monthly pricing</span><h1>Choose the workspace your brand needs.</h1><p>Creator accounts are always free. Standard is designed for creator discovery; Advanced adds the tools for managing ongoing campaigns and relationships.</p></div></section>
     <section className="section section-white"><div className="container">
@@ -25,7 +27,7 @@ export default function PricingPage() {
           <div className="price">{plan.price} <small>/ month</small></div>
           <p>{plan.note}</p>
           <ul className="check-list">{plan.advanced ? <><li>Everything in Standard</li><li>Creator Match Requests and alerts</li><li>Campaign workspace</li><li>Saved searches, CRM notes and templates</li></> : <><li>Creator search and filters</li><li>Full approved creator profiles</li><li>Creator-approved contact details</li><li>Private creator shortlist</li></>}</ul>
-          <Link className="button button-dark button-full" href="/signup/brand">Create a brand account</Link>
+          <Link className="button button-dark button-full" href={brandsOpen ? "/signup/brand" : "https://inflascope.co.uk/#membership"}>{brandsOpen ? "Create a brand account" : "Join the brand waitlist"}</Link>
         </article>)}
       </div>
       <p className="founding-price-note"><strong>Founding price locked for as long as your membership remains active.</strong> Limited to the first 50 brands in each founding tier.</p>

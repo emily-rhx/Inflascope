@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { and, eq, gt } from "drizzle-orm";
 import { db } from "@/db";
 import { sessions, users } from "@/db/schema";
+import { brandAccountsOpen } from "@/lib/launch";
 
 const COOKIE_NAME = "inflascope_session";
 const SESSION_DAYS = 30;
@@ -51,6 +52,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     .innerJoin(users, eq(sessions.userId, users.id))
     .where(and(eq(sessions.tokenHash, hashToken(token)), gt(sessions.expiresAt, new Date()), eq(users.isActive, true)))
     .limit(1);
+  if (row?.role === "brand" && !(await brandAccountsOpen())) return null;
   return row ?? null;
 }
 

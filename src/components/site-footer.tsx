@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Logo } from "./logo";
+import { brandAccountsOpen } from "@/lib/launch";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const brandsOpen = await brandAccountsOpen();
   return (
     <footer className="site-footer">
       <div className="footer-grid">
@@ -18,7 +20,7 @@ export function SiteFooter() {
         <div>
           <h2>Join</h2>
           <Link href="/signup/creator">Join as a creator</Link>
-          <Link href="/signup/brand">Join as a brand</Link>
+          <Link href={brandsOpen ? "/signup/brand" : "https://inflascope.co.uk/#membership"}>{brandsOpen ? "Join as a brand" : "Brand waitlist"}</Link>
           <Link href="/login">Log in</Link>
         </div>
         <div>

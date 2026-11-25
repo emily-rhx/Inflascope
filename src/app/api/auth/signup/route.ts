@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { brandProfiles, collaborationPreferences, creatorContacts, creatorProfiles, emailVerificationTokens, socialAccounts, users } from "@/db/schema";
 import { createSession, tokenDigest } from "@/lib/auth";
 import { sendAccountEmail } from "@/lib/email";
+import { brandAccountsOpen } from "@/lib/launch";
 import { checkRateLimit, requestFingerprint } from "@/lib/rate-limit";
 import { formString, isSameOrigin } from "@/lib/security";
 import { slugify } from "@/lib/utils";
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     const message = parsed.success ? "You must confirm you are 18 or over" : firstZodError(parsed.error);
     return NextResponse.redirect(new URL(`${back}?error=${encodeURIComponent(message)}`, request.url), 303);
   }
+  if (parsed.data.role === "brand" && !(await brandAccountsOpen())) return NextResponse.redirect("https://inflascope.co.uk/#membership", 303);
   if (parsed.data.role === "brand" && !parsed.data.businessName) return NextResponse.redirect(new URL(`${back}?error=${encodeURIComponent("Enter your business name")}`, request.url), 303);
   const creatorDetails = parsed.data.role === "creator" ? creatorSignupDetailsSchema.safeParse({
     phone: formString(form, "phone"),
