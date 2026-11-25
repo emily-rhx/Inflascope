@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { collaborationPreferences, creatorContacts, creatorNiches, creatorProfiles, engagementMetrics, moderationActions, niches, portfolioAssets, socialAccounts } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { formString, isSameOrigin } from "@/lib/security";
+import { REVIEW_SECTIONS, serialiseSectionFeedback, type ReviewSectionKey } from "@/lib/review-feedback";
+import { safeNextPath } from "@/lib/utils";
 import { z } from "zod";
 
 type PendingPayload = {
@@ -22,10 +24,17 @@ export async function POST(request: Request) {
   const creatorId = formString(form, "creatorId");
   const action = formString(form, "action");
   const notes = formString(form, "notes").trim().slice(0, 1500);
+  const returnTo = safeNextPath(formString(form, "returnTo"), "/admin/dashboard#applications");
   if (!z.string().uuid().safeParse(creatorId).success) return new Response("Invalid creator", { status: 400 });
   const [profile] = await db.select().from(creatorProfiles).where(eq(creatorProfiles.id, creatorId)).limit(1);
   if (!profile) return new Response("Profile not found", { status: 404 });
-  const redirect = (value = action) => NextResponse.redirect(new URL(`/admin/dashboard?updated=${value}#applications`, request.url), 303);
+  const redirectWith = (key: string, value: string) => {
+    const destination = new URL(returnTo, request.url);
+    destination.searchParams.set(key, value);
+    return NextResponse.redirect(destination, 303);
+  };
+  const redirect = (value = action) => redirectWith("updated", value);
+  const errorRedirect = (error: string) => redirectWith("error", error);
 
   if (action === "ownership_checked") {
     await db.transaction(async (tx) => {
@@ -35,7 +44,7 @@ export async function POST(request: Request) {
     return redirect();
   }
   if (action === "approve") {
-    if (!profile.accountOwnershipChecked) return NextResponse.redirect(new URL("/admin/dashboard?error=ownership#applications", request.url), 303);
+    if (!profile.accountOwnershipChecked) return errorRedirect("ownership");
     const pending = (profile.pendingChanges || null) as PendingPayload | null;
     await db.transaction(async (tx) => {
       if (pending) {
@@ -59,10 +68,15 @@ export async function POST(request: Request) {
     return redirect();
   }
   if (action === "changes_requested") {
-    if (!notes) return NextResponse.redirect(new URL("/admin/dashboard?error=notes#applications", request.url), 303);
+    const selected = form.getAll("reviewSections").map(String).filter((section): section is ReviewSectionKey => section in REVIEW_SECTIONS);
+    const sectionFeedback = selected.map((section) => ({ section, label: REVIEW_SECTIONS[section], note: formString(form, `note_${section}`).trim().slice(0, 1500) }));
+    if (sectionFeedback.some((item) => !item.note)) return errorRedirect("section-notes");
+    const feedback = sectionFeedback.length ? serialiseSectionFeedback(sectionFeedback) : notes;
+    if (!feedback) return errorRedirect("notes");
+    const logNotes = sectionFeedback.length ? sectionFeedback.map((item) => `${item.label}: ${item.note}`).join(" | ") : notes;
     await db.transaction(async (tx) => {
-      await tx.update(creatorProfiles).set({ status: profile.status === "approved" ? "approved" : "changes_requested", reviewFeedback: notes }).where(eq(creatorProfiles.id, creatorId));
-      await tx.insert(moderationActions).values({ creatorId, adminUserId: admin.id, action: "changes_requested", notes });
+      await tx.update(creatorProfiles).set({ status: profile.status === "approved" ? "approved" : "changes_requested", reviewFeedback: feedback }).where(eq(creatorProfiles.id, creatorId));
+      await tx.insert(moderationActions).values({ creatorId, adminUserId: admin.id, action: "changes_requested", notes: logNotes });
     });
     return redirect();
   }

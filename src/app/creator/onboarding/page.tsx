@@ -7,6 +7,7 @@ import { FormDraftRecovery } from "@/components/form-draft-recovery";
 import { requireUser } from "@/lib/auth";
 import { DEFAULT_NICHES } from "@/lib/niches";
 import { storageMode } from "@/lib/storage";
+import { parseSectionFeedback } from "@/lib/review-feedback";
 
 export const metadata: Metadata = { title: "Creator profile setup", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -29,9 +30,11 @@ export default async function CreatorOnboardingPage({ searchParams }: Props) {
   const instagram = socials.find((item) => item.platform === "instagram"); const tiktok = socials.find((item) => item.platform === "tiktok");
   const selected = new Set(selectedNiches.map((item) => item.nicheId));
   const storageReady = storageMode() !== null;
+  const sectionFeedback = parseSectionFeedback(profile.reviewFeedback);
   return <DashboardShell user={user} title="Build your creator profile"><div className="onboarding">
     <div className="progress" aria-label="Profile setup steps"><span className="active">1 · Basics</span><span>2 · Socials</span><span>3 · About</span><span>4 · Portfolio</span><span>5 · Collaborations</span><span>6 · Submit</span></div>
     {state.error && <p className="form-message form-error">{state.error === "verify" ? "Verify your email before submitting. You can still save a draft." : state.error}</p>}
+    {sectionFeedback.length > 0 && <section className="dashboard-section"><h2>Sections to update</h2><p>Make the requested changes below, then submit your profile again.</p>{sectionFeedback.map((item) => <div className="form-message form-error" key={item.section}><strong>{item.label}</strong><br />{item.note}</div>)}</section>}
     {profile.status === "approved" && <p className="form-message form-success">Your approved profile stays live while these changes are staged for review.</p>}
     <FormDraftRecovery formId="creator-profile-form" storageKey={`creator-profile-draft-${user.id}`} restore={Boolean(state.error)} />
     <form id="creator-profile-form" action="/api/creator/profile" method="post" encType="multipart/form-data">
